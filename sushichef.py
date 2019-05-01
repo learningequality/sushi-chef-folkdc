@@ -170,6 +170,9 @@ class Resource(object):
                 elif subject == "songs":
                     self.resources.append(Song(title=info["title"], source_id=info["url"],
                                         lang=self.lang))
+                elif subject == "activities":
+                    self.resources.append(Activities(title=info["title"], source_id=info["url"], 
+                                          lang=self.lang))
 
     def __iter__(self):
         return iter(self.resources)
@@ -371,6 +374,85 @@ class Song(ContentNode):
                     topic_node.add_node(audio_node)
                     topic_node.add_node(pdf_node)
                     self.add_node(topic_node)
+        else:
+            LOGGER.error("Empty body in {}".format(self.source_id))
+            return
+
+
+class Activities(ContentNode):
+    @cache
+    def body(self):
+        soup = self.to_soup()
+        return soup.find("div", class_="entry_content")
+
+    def to_file(self, base_path):
+        activity = None
+        for tag in self.body().find_all("p"):
+            if tag.get_text() == "LANGUAGE ACTIVITIES":
+                activity = Language(title=tag.get_text(), source_id=tag.get_text(), lang=self.lang)
+            elif tag.get_text() == "ACTIVIDADES CULTURALES":
+                activity = Culture(title=tag.get_text(), source_id=tag.get_text(), lang=self.lang)
+            elif tag.get_text() == "ACTIVIDADES MUSICALES":
+                 activity = Music(title=tag.get_text(), source_id=tag.get_text(), lang=self.lang)
+
+            if tag.children is not None and activity is not None:
+                children = list(tag.children)
+                if len(children) > 1:
+                    for elem in children:
+                        activity.add_tag(elem)
+                    activity.to_file(base_path)
+                    self.add_node(activity)
+                    activity = None
+
+
+class Language(ContentNode):
+    def __init__(self, *args, **kwargs):
+        super(Language, self).__init__(*args, **kwargs)
+        self.elems = []
+        self.additional = []
+
+    def add_tag(self, tag):
+        if tag.name == "a":
+            url = tag.attrs.get("href", "")
+            if url.endswith(".pdf"):
+                self.elems.append(url)
+            else:
+                title = tag.attrs.get("title", "Material Additional")
+                self.additional.append((title, url))
+        elif tag.name == "em":
+            self.elems.append(tag.get_text().rstrip())
+
+    def to_file(self, base_path):
+        for title, url in zip(self.elems[::2], self.elems[1::2]):
+            pdf_node = File(source_id=url, lang=self.lang, title=title)
+            pdf_node.download(download=DOWNLOAD_FILES, base_path=base_path)
+            self.add_node(pdf_node)
+
+        if len(self.additional) > 0:
+            for title, url in self.additional:
+                additional = AdditionalMaterial(source_id=url, title=title, lang=self.lang)
+                additional.to_file(base_path)
+                self.add_node(additional)
+
+
+class Culture(Language):
+    pass
+
+
+class Music(Language):
+    pass
+
+
+class AdditionalMaterial(ContentNode):
+    @cache
+    def body(self):
+        soup = self.to_soup()
+        return soup.find("div", class_="entry_content")
+
+    def to_file(self, base_path):
+        if self.body() is not None:
+            self.add_nodes(self.build_audio_nodes(base_path, self.body()))
+            self.add_nodes(self.build_pdfs_nodes(base_path, self.body()))
         else:
             LOGGER.error("Empty body in {}".format(self.source_id))
             return
