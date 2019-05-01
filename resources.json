@@ -1,0 +1,12 @@
+{
+    "en": {"introduction": "http://folkdc.eu/resources/overview/",
+            "songs": ""},
+    "es": {"introduction": 
+            {"title": "Introducción", "url": "http://folkdc.eu/es/recursos/introduccion/"},
+          "songs": 
+            {"title": "Canciones", "url": "http://folkdc.eu/es/recursos/attt-canciones-y-plantillas/"},
+          "activities": 
+            {"title": "Actividades", "url": "http://folkdc.eu/es/attt-actividades/"}
+          },
+    "it": {"introduction": "http://folkdc.eu/it/resources/introduzione/"}
+}
