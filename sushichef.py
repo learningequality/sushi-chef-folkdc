@@ -6,7 +6,7 @@ from collections import defaultdict, OrderedDict
 import copy
 from git import Repo
 import glob
-from le_utils.constants import licenses, content_kinds, file_formats
+from le_utils.constants import licenses, content_kinds, file_formats, roles
 import hashlib
 import json
 import logging
@@ -67,12 +67,25 @@ CHANNEL_SOURCE_ID = "sushi-chef-folkdc"    # Channel's unique id
 CHANNEL_DOMAIN = ""          # Who is providing the content
 CHANNEL_LANGUAGE = ""      # Language of channel
 CHANNEL_DESCRIPTION = None                                  # Description of the channel (optional)
-CHANNEL_THUMBNAIL = "http://folkdc.eu/img/Folk8-200.png"    # Local path or url to image file (optional)
+CHANNEL_THUMBNAIL = "Folk8-200.png"    # Local path or url to image file (optional)
 
 AGENT_HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:20.0) Gecko/20100101 Firefox/20.0",
     "Accept-Encoding": "gzip, deflate",
     "Connection": "keep-alive"
+}
+
+LANG_MAP = {
+    "English": "en",
+    "Italian": "it",
+    "Finnish": "fi",
+    "Swedish": "sv",
+    "Turkish": "tr",
+    "Czech": "cs",
+    "Spanish": "es",
+    "Portuguese": "pt",
+    "Romanian": "ro",
+    "Roma": "rm"
 }
 
 
@@ -87,20 +100,27 @@ def cache(fn):
     return view
 
 
-class Node:
+class TopicNode:
     def __init__(self, title=None, source_id=None, lang="en"):
         self.title = title
         self.source_id = source_id
         self.tree_nodes = OrderedDict()
         self.lang = lang
         self.description = None
+        self.role = roles.LEARNER
 
     @classmethod
     def cls_name(cls):
         return cls.__name__
 
     def add_node(self, obj):
-        node = obj.to_node()
+        if isinstance(obj, TopicNode):
+            node = obj.to_dict()
+        elif isinstance(obj, dict):
+            node = obj
+        else:
+            raise Exception("The object {} is not valid".format(obj))
+
         if node is not None:
             self.tree_nodes[node["source_id"]] = node
 
@@ -108,22 +128,31 @@ class Node:
         for node in nodes:
             self.add_node(node)
 
-    def to_node(self):
-        children = list(self.tree_nodes.values())
+    def get_children(self):
+        return list(self.tree_nodes.values())
+
+    def to_dict(self, children=None):
+        return dict(
+            kind=content_kinds.TOPIC,
+            source_id=self.source_id,
+            title=self.title,
+            description=self.description,
+            language=self.lang,
+            author=AUTHOR,
+            role=self.role,
+            license=LICENSE,
+            children=children
+        )
+
+
+class Node(TopicNode):
+    
+    def to_dict(self):
+        children = self.get_children()
         if len(children) == 1:
             return children[0]
         else:
-            return dict(
-                kind=content_kinds.TOPIC,
-                source_id=self.source_id,
-                title=self.title,
-                description=self.description,
-                language=self.lang,
-                author=AUTHOR,
-                #role=roles.COACH,
-                license=LICENSE,
-                children=list(self.tree_nodes.values())
-            )
+            return TopicNode(title=self.title, source_id=self.source_id).to_dict(children)
 
 
 class Resource(object):
@@ -215,7 +244,7 @@ class Html5Node(Node):
                 self.write_images(self.filepath, images)
                 self.write_css_js(self.filepath)
 
-    def to_node(self):
+    def to_dict(self):
         if self.filepath is not None:
             return dict(
                 kind=content_kinds.HTML5,
@@ -254,20 +283,22 @@ class ContentNode(Node):
         return urls
 
     def get_pdfs_urls(self, content):
-        urls = set([])
+        urls = OrderedDict()
         if content is not None:
             pdf_urls = content.findAll(lambda tag: tag.name == "a" and tag.attrs.get("href", "").endswith(".pdf"))
             for pdf_url in pdf_urls:
-                urls.add(pdf_url.get("href", ""))
-        return urls
+                url = pdf_url.get("href", "")
+                urls[url] = url
+        return urls.keys()
 
     def get_audio_urls(self, content):
-        urls = set([])
+        urls = OrderedDict()
         if content is not None:
             audio_urls = content.findAll(lambda tag: tag.name == "a" and tag.attrs.get("href", "").endswith(".mp3"))
             for audio_url in audio_urls:
-                urls.add(audio_url.get("href", ""))
-        return urls
+                url = audio_url.get("href", "")
+                urls[url] = url
+        return urls.keys()
 
     def build_pdfs_nodes(self, base_path, content):
         pdfs_url = self.get_pdfs_urls(content)
@@ -324,8 +355,22 @@ class Song(ContentNode):
 
     def to_file(self, base_path):
         if self.body() is not None:
-            self.add_nodes(self.build_audio_nodes(base_path, self.body()))
-            self.add_nodes(self.build_pdfs_nodes(base_path, self.body()))
+            rows = self.body().find("table").find("tbody").find_all("tr")
+            for row in rows:
+                cells = row.find_all("td")
+                if len(cells) == 5:
+                    title = cells[0].get_text()
+                    lang = LANG_MAP.get(cells[1].get_text(), "en")
+                    pdf_url = cells[2].find("a").attrs.get("href", "")
+                    audio_url = cells[3].find("a").attrs.get("href", "")
+                    audio_node = Audio(source_id=audio_url, lang=lang, title=title)
+                    audio_node.download(download=DOWNLOAD_AUDIO, base_path=base_path)
+                    pdf_node = File(source_id=pdf_url, lang=lang, title=title)
+                    pdf_node.download(download=DOWNLOAD_FILES, base_path=base_path)
+                    topic_node = Node(title=title, source_id=title, lang=lang)
+                    topic_node.add_node(audio_node)
+                    topic_node.add_node(pdf_node)
+                    self.add_node(topic_node)
         else:
             LOGGER.error("Empty body in {}".format(self.source_id))
             return
@@ -472,7 +517,7 @@ class YouTubeResourceNode(YouTubeResource):
         url_re = re.compile(pattern)
         return url_re.findall(description)
 
-    def to_node(self):
+    def to_dict(self):
         if self.filepath is not None:
             files = [dict(file_type=content_kinds.VIDEO, path=self.filepath)]
             files += self.subtitles_dict()
@@ -496,7 +541,7 @@ class File(Node):
         self.source_id = urljoin(FolkDCChef.BASE_URL, self.source_id)\
             if source_id.startswith("/") else self.source_id
         self.filepath = None
-        self.name = "{}_{}".format(self.title, self.filename)
+        self.name = get_name_from_url_no_ext(self.filename)
 
     def download(self, download=True, base_path=None):
         try:
@@ -524,7 +569,7 @@ class File(Node):
         except requests.exceptions.InvalidSchema as e:
             LOGGER.error("Error: {}".format(e))
 
-    def to_node(self):
+    def to_dict(self):
         if self.filepath is not None:
             node = dict(
                 kind=content_kinds.DOCUMENT,
@@ -547,7 +592,7 @@ class Audio(Node):
         self.source_id = urljoin(FolkDCChef.BASE_URL, self.source_id)\
             if source_id.startswith("/") else self.source_id
         self.filepath = None
-        self.name = "{}_{}".format(self.title, self.filename)
+        self.name = get_name_from_url_no_ext(self.filename)
 
     def download(self, download=True, base_path=None):
         try:
@@ -575,15 +620,15 @@ class Audio(Node):
         except requests.exceptions.InvalidSchema as e:
             LOGGER.error("Error: {}".format(e))
 
-    def to_node(self):
+    def to_dict(self):
         if self.filepath is not None:
             node = dict(
-                kind=content_kinds.VIDEO,
+                kind=content_kinds.AUDIO,
                 source_id=self.source_id,
                 title=self.name,
                 description='',
                 files=[dict(
-                    file_type=content_kinds.VIDEO,
+                    file_type=content_kinds.AUDIO,
                     path=self.filepath
                 )],
                 language=self.lang,
@@ -667,7 +712,7 @@ class FolkDCChef(JsonTreeChef):
             for resource in resources:
                 base_path = build_path([DATA_DIR, resource.lang, resource.cls_name()])
                 resource.to_file(base_path)
-                node = resource.to_node()
+                node = resource.to_dict()
                 if node is not None:
                     channel_tree["children"].append(node)
             return channel_tree
@@ -679,7 +724,7 @@ class FolkDCChef(JsonTreeChef):
 def test(channel_tree):
     base_path = build_path([DATA_DIR, DATA_DIR_SUBJECT, "test"])
     #c.to_file(base_path)
-    channel_tree["children"].append(c.to_node())
+    channel_tree["children"].append(c.to_dict())
     return channel_tree
 
 # CLI
