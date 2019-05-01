@@ -52,6 +52,7 @@ LOGGER.setLevel(logging.INFO)
 
 DOWNLOAD_VIDEOS = True
 DOWNLOAD_FILES = True
+DOWNLOAD_AUDIO = True
 OVERWRITE = True
 
 sess = requests.Session()
@@ -68,20 +69,11 @@ CHANNEL_LANGUAGE = ""      # Language of channel
 CHANNEL_DESCRIPTION = None                                  # Description of the channel (optional)
 CHANNEL_THUMBNAIL = "http://folkdc.eu/img/Folk8-200.png"    # Local path or url to image file (optional)
 
-
-SUBJECTS = {
-    "en": {"introduction": "http://folkdc.eu/resources/overview/",
-           "songs": ""},
-    "es": {"introduction": 
-            {"title": "Introducción", "url": "http://folkdc.eu/es/recursos/introduccion/"},
-          "songs": 
-            {"title": "Canciones", "url": "http://folkdc.eu/es/recursos/attt-canciones-y-plantillas/"},
-          "activities": 
-            {"title": "Actividades", "url": "http://folkdc.eu/es/attt-actividades/"}
-          },
-    "it": {"introduction": "http://folkdc.eu/it/resources/introduzione/"}
+AGENT_HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:20.0) Gecko/20100101 Firefox/20.0",
+    "Accept-Encoding": "gzip, deflate",
+    "Connection": "keep-alive"
 }
-
 
 
 def cache(fn):
@@ -140,20 +132,15 @@ class Resource(object):
         self.resources = []
 
     def load(self, filename, auto_parse=False):
-        for subject, info in SUBJECTS[self.lang].items():
-            if subject == "introduction":
-                subject_obj = Introduction(title=info["title"], source_id=info["url"], 
-                    lang=self.lang)
-                self.resources.append(subject_obj)
-            #print(, info)
-        #with open(filename, "r") as f:
-        #    grades = json.load(f)
-        #    for grade in grades:
-        #        grade_obj = Grade() 
-        #        subject_obj = Subject(title=grade["title"], source_id=grade["source_id"], 
-        #                              lang=grade["lang"])
-        #        subject_obj.auto_generate_lessons(grade["lessons"], playlist=False)
-        #        self.grades.append(subject_obj)
+        with open(filename, "r") as f:
+            SUBJECTS = json.load(f)
+            for subject, info in SUBJECTS[self.lang].items():
+                if subject == "introduction":
+                    self.resources.append(Introduction(title=info["title"], source_id=info["url"], 
+                                               lang=self.lang))
+                elif subject == "songs":
+                    self.resources.append(Song(title=info["title"], source_id=info["url"],
+                                        lang=self.lang))
 
     def __iter__(self):
         return iter(self.resources)
@@ -177,7 +164,7 @@ class Html5Node(Node):
                 continue
             else:
                 if img_src.startswith("/"):
-                    img_src = urljoin(BASE_URL, img_src)
+                    img_src = urljoin(FolkDCChef.BASE_URL, img_src)
                 filename = get_name_from_url(img_src)
                 if img_src not in images_urls and img_src:
                     img["src"] = filename
@@ -274,6 +261,14 @@ class ContentNode(Node):
                 urls.add(pdf_url.get("href", ""))
         return urls
 
+    def get_audio_urls(self, content):
+        urls = set([])
+        if content is not None:
+            audio_urls = content.findAll(lambda tag: tag.name == "a" and tag.attrs.get("href", "").endswith(".mp3"))
+            for audio_url in audio_urls:
+                urls.add(audio_url.get("href", ""))
+        return urls
+
     def build_pdfs_nodes(self, base_path, content):
         pdfs_url = self.get_pdfs_urls(content)
         base_path = build_path([base_path, 'pdfs'])
@@ -281,6 +276,14 @@ class ContentNode(Node):
             pdf_file = File(source_id=pdf_url, lang=self.lang, title=self.title)
             pdf_file.download(download=DOWNLOAD_FILES, base_path=base_path)
             yield pdf_file
+
+    def build_audio_nodes(self, base_path, content):
+        audio_urls = self.get_audio_urls(content)
+        base_path = build_path([base_path, 'audio'])
+        for audio_url in audio_urls:
+            audio_file = Audio(source_id=audio_url, lang=self.lang, title=self.title)
+            audio_file.download(download=DOWNLOAD_AUDIO, base_path=base_path)
+            yield audio_file
 
     def build_video_nodes(self, base_path, content):
         videos_url = self.get_videos_urls(content)
@@ -311,6 +314,21 @@ class Introduction(ContentNode):
     def body(self):
         soup = self.to_soup()
         return soup.find("div", id="column-main")
+
+
+class Song(ContentNode):
+    @cache
+    def body(self):
+        soup = self.to_soup()
+        return soup.find("div", id="column-main")
+
+    def to_file(self, base_path):
+        if self.body() is not None:
+            self.add_nodes(self.build_audio_nodes(base_path, self.body()))
+            self.add_nodes(self.build_pdfs_nodes(base_path, self.body()))
+        else:
+            LOGGER.error("Empty body in {}".format(self.source_id))
+            return
 
 
 def thumbnails_links(soup, tag, class_):
@@ -475,7 +493,8 @@ class File(Node):
     def __init__(self, title=None, source_id=None, lang="en"):
         super(File, self).__init__(title=title, source_id=source_id, lang=lang)
         self.filename = get_name_from_url(source_id)
-        self.source_id = urljoin(BASE_URL, self.source_id) if source_id.startswith("/") else self.source_id
+        self.source_id = urljoin(FolkDCChef.BASE_URL, self.source_id)\
+            if source_id.startswith("/") else self.source_id
         self.filepath = None
         self.name = "{}_{}".format(self.title, self.filename)
 
@@ -483,7 +502,7 @@ class File(Node):
         try:
             if download is False:
                 return
-            response = sess.get(self.source_id)
+            response = sess.get(self.source_id, headers=AGENT_HEADERS, timeout=10)
             content_type = response.headers.get('content-type')
             if content_type is not None and 'application/pdf' in content_type:
                 self.filepath = os.path.join(base_path, self.filename)
@@ -521,18 +540,63 @@ class File(Node):
             return node
 
 
-def download(source_id, loadjs=False, timeout=5):
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:20.0) Gecko/20100101 Firefox/20.0",
-        "Accept-Encoding": "gzip, deflate",
-        "Connection": "keep-alive"
-    }
+class Audio(Node):
+    def __init__(self, title=None, source_id=None, lang="en"):
+        super(Audio, self).__init__(title=title, source_id=source_id, lang=lang)
+        self.filename = get_name_from_url(source_id)
+        self.source_id = urljoin(FolkDCChef.BASE_URL, self.source_id)\
+            if source_id.startswith("/") else self.source_id
+        self.filepath = None
+        self.name = "{}_{}".format(self.title, self.filename)
 
+    def download(self, download=True, base_path=None):
+        try:
+            if download is False:
+                return
+            response = sess.get(self.source_id, headers=AGENT_HEADERS, timeout=10)
+            content_type = response.headers.get('content-type')
+            if content_type is not None and 'audio/mpeg' in content_type:
+                self.filepath = os.path.join(base_path, self.filename)
+                with open(self.filepath, 'wb') as f:
+                    for chunk in response.iter_content(10000):
+                        f.write(chunk)
+                LOGGER.info("    - Get audio file: {}, node name: {}".format(self.filename, self.name))
+        except requests.exceptions.HTTPError as e:
+            LOGGER.info("Error: {}".format(e))
+        except requests.exceptions.ConnectionError:
+            ### this is a weird error, may be it's raised when the webpage
+            ### is slow to respond requested resources
+            LOGGER.info("Connection error, the resource will be scraped in 5s...")
+            time.sleep(3)
+        except requests.exceptions.ReadTimeout as e:
+            LOGGER.error("Error: {}".format(e))
+        except requests.exceptions.TooManyRedirects as e:
+            LOGGER.error("Error: {}".format(e))
+        except requests.exceptions.InvalidSchema as e:
+            LOGGER.error("Error: {}".format(e))
+
+    def to_node(self):
+        if self.filepath is not None:
+            node = dict(
+                kind=content_kinds.VIDEO,
+                source_id=self.source_id,
+                title=self.name,
+                description='',
+                files=[dict(
+                    file_type=content_kinds.VIDEO,
+                    path=self.filepath
+                )],
+                language=self.lang,
+                license=LICENSE)
+            return node
+
+
+def download(source_id, loadjs=False, timeout=5):
     tries = 0
     while tries < 4:
         try:
             #document = downloader.read(source_id, loadjs=loadjs, session=sess)
-            response = sess.get(source_id, headers=headers, timeout=timeout)
+            response = sess.get(source_id, headers=AGENT_HEADERS, timeout=timeout)
             if response.status_code != 200:
                 LOGGER.error(response.status_code)
             document = response.text
@@ -599,9 +663,9 @@ class FolkDCChef(JsonTreeChef):
             return test(channel_tree)
         else:
             resources = Resource(lang=self.lang)
-            resources.load(None)
+            resources.load("resources.json")
             for resource in resources:
-                base_path = build_path([DATA_DIR, self.lang, resource.cls_name()])
+                base_path = build_path([DATA_DIR, resource.lang, resource.cls_name()])
                 resource.to_file(base_path)
                 node = resource.to_node()
                 if node is not None:
@@ -614,10 +678,7 @@ class FolkDCChef(JsonTreeChef):
 
 def test(channel_tree):
     base_path = build_path([DATA_DIR, DATA_DIR_SUBJECT, "test"])
-    #c = CourseIndex("test", "https://chem.libretexts.org/Courses/University_of_California%2C_Irvine/UCI%3A_General_Chemistry_1C_(OpenChem)/015Review_on_Cell_Potential_(OpenChem)/xSolution")
-    #c.index(base_path)
-    c = Chapter("test", "https://phys.libretexts.org/Courses/University_of_California_Davis/UCD%3A_Physics_9A%2F%2F9HA_%E2%80%93_Classical_Mechanics/4%3A_Linear_Momentum/4.6%3A_Problem_Solving")
-    c.to_file(base_path)
+    #c.to_file(base_path)
     channel_tree["children"].append(c.to_node())
     return channel_tree
 
