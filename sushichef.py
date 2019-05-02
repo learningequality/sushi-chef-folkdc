@@ -386,13 +386,27 @@ class Activities(ContentNode):
         return soup.find("div", class_="entry_content")
 
     def to_file(self, base_path):
+        language_activities = ["LANGUAGE ACTIVITIES", "Sprachliche Aktivitäten", 
+            "ATTIVITÀ LINGUISTICHE", "KIELITEHTÄVÄT", "ACTIVITĂŢI LINGVISTICE",
+            "DİL AKTİVİTELERİ"]
+        cultural_activities = ["ACTIVIDADES CULTURALES", "Kulturelle Aktivitäten", 
+            "CULTURAL ACTIVITIES", "ATTIVITÀ CULTURALI", "KULTTUURITEHTÄVÄT",
+            "ACTIVITĂŢI CULTURALE", "KÜLTÜREL AKTİVİTELERE"]
+        musical_activities = ["ACTIVIDADES MUSICALES", "Musikalische Aktivitäten", 
+            "MUSICAL ACTIVITIES", "ATTIVITÀ MUSICALI", "MUSIIKKITEHTÄVÄT",
+            "ACTIVITĂŢI MUZICALE", "MÜZİK AKTİVİTELERİ"]
+
+        language_activities = [string.lower() for string in language_activities]
+        cultural_activities = [string.lower() for string in cultural_activities]
+        musical_activities = [string.lower() for string in musical_activities]
+        
         activity = None
         for tag in self.body().find_all("p"):
-            if tag.get_text() == "LANGUAGE ACTIVITIES":
+            if tag.get_text().lower() in language_activities:
                 activity = Language(title=tag.get_text(), source_id=tag.get_text(), lang=self.lang)
-            elif tag.get_text() == "ACTIVIDADES CULTURALES":
+            elif tag.get_text().lower() in cultural_activities:
                 activity = Culture(title=tag.get_text(), source_id=tag.get_text(), lang=self.lang)
-            elif tag.get_text() == "ACTIVIDADES MUSICALES":
+            elif tag.get_text().lower() in musical_activities:
                  activity = Music(title=tag.get_text(), source_id=tag.get_text(), lang=self.lang)
 
             if tag.children is not None and activity is not None:
@@ -776,7 +790,7 @@ class FolkDCChef(JsonTreeChef):
         channel_tree = dict(
                 source_domain=FolkDCChef.BASE_URL,
                 source_id=CHANNEL_SOURCE_ID + "-" + self.lang,
-                title=CHANNEL_NAME,
+                title="{} ({})".format(CHANNEL_NAME, self.lang),
                 description="""Digital Children's Folksongs for Language and Cultural Learning: a collection of multi-language folk songs and activities for primary students to learn languages, engage in collaboration and critical thinking, and develop intercultural skills. Contains folk songs, activity suggestions, and teacher training materials."""
 [:400], #400 UPPER LIMIT characters allowed 
                 thumbnail=CHANNEL_THUMBNAIL,
