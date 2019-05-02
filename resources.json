@@ -1,6 +1,11 @@
 {
-    "en": {"introduction": "http://folkdc.eu/resources/overview/",
-            "songs": ""},
+    "en": {"introduction": 
+            {"title": "Introduction", "url": "http://folkdc.eu/resources/overview/"},
+           "songs": 
+            {"title": "Songs", "url": "http://folkdc.eu/resources/folksongs/"},
+           "activities": 
+            {"title": "Activities", "url": "http://folkdc.eu/handbook/"}
+          },
     "es": {"introduction": 
             {"title": "Introducción", "url": "http://folkdc.eu/es/recursos/introduccion/"},
           "songs": 
@@ -8,5 +13,39 @@
           "activities": 
             {"title": "Actividades", "url": "http://folkdc.eu/es/attt-actividades/"}
           },
-    "it": {"introduction": "http://folkdc.eu/it/resources/introduzione/"}
+    "it": {"introduction": 
+            {"title": "Introduzione", "url": "http://folkdc.eu/it/resources/introduzione/"},
+            "songs": 
+            {"title": "Canzoni", "url": "http://folkdc.eu/it/resources/folksongs-2/"},
+           "activities": 
+            {"title": "Attività", "url": "http://folkdc.eu/it/manuale/"} 
+          },
+    "de": {"introduction": 
+            {"title": "Einführung", "url": "http://folkdc.eu/de/materialien/attt-einfuhrung/"},
+            "songs": 
+            {"title": "Lieder", "url": "http://folkdc.eu/de/materialien/attt-lieder-und-vorlagen/"},
+           "activities": 
+            {"title": "Aktivitäten", "url": "http://folkdc.eu/de/attt-aktivitaten/"} 
+          },
+    "fi": {"introduction": 
+            {"title": "Esittely", "url": "http://folkdc.eu/fi/materiaali/attt-opetuspaketin-esittely/"},
+            "songs": 
+            {"title": "Laulut", "url": "http://folkdc.eu/fi/materiaali/attt-laulut-ja-laulupohjat/"},
+           "activities": 
+            {"title": "Tehtävät", "url": "http://folkdc.eu/fi/attt-tehtavat/"} 
+          },
+    "ro": {"introduction": 
+            {"title": "Introducere", "url": "http://folkdc.eu/ro/metodologie/prezentarea-attt/"},
+            "songs": 
+            {"title": "Cântece", "url": "http://folkdc.eu/ro/metodologie/attt-cantece-si-fise/"},
+           "activities": 
+            {"title": "Activităţile", "url": "http://folkdc.eu/ro/activitatile-attt/"} 
+          },
+    "tr": {"introduction": 
+            {"title": "Introduction", "url": "http://folkdc.eu/tr/kaynaklar/ogretmen-otonom-egitim-seti-giris/"},
+            "songs": 
+            {"title": "Songs", "url": "http://folkdc.eu/tr/kaynaklar/ooes-sarkilar-ve-sarki-sablonlari/"},
+           "activities": 
+            {"title": "Aktiviteleri", "url": "http://folkdc.eu/tr/ooes-aktiviteler/"} 
+          }
 }
