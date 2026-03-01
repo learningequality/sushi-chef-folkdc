@@ -35,7 +35,6 @@ from utils import get_name_from_url_no_ext, get_node_from_channel, get_level_map
 from utils import remove_iframes, get_confirm_token, save_response_content
 from utils import link_to_text, remove_scripts
 import youtube_dl
-from urllib.parse import urlparse
 
 
 DATA_DIR = "chefdata"
@@ -53,6 +52,7 @@ LOGGER.setLevel(logging.INFO)
 DOWNLOAD_VIDEOS = True
 DOWNLOAD_FILES = True
 DOWNLOAD_AUDIO = True
+LOAD_VIDEO_LIST = True
 OVERWRITE = True
 
 sess = requests.Session()
@@ -89,7 +89,7 @@ LANG_MAP = {
 }
 
 
-def cache(fn):
+def cached(fn):
     def view(*args, **kwargs):
         self = args[0]
         key = "{}_cache".format(fn.__name__)
@@ -344,14 +344,14 @@ class ContentNode(Node):
 
 
 class Introduction(ContentNode):
-    @cache
+    @cached
     def body(self):
         soup = self.to_soup()
         return soup.find("div", id="column-main")
 
 
 class Song(ContentNode):
-    @cache
+    @cached
     def body(self):
         soup = self.to_soup()
         return soup.find("div", id="column-main")
@@ -380,7 +380,7 @@ class Song(ContentNode):
 
 
 class Activities(ContentNode):
-    @cache
+    @cached
     def body(self):
         soup = self.to_soup()
         return soup.find("div", class_="entry_content")
@@ -458,7 +458,7 @@ class Music(Language):
 
 
 class AdditionalMaterial(ContentNode):
-    @cache
+    @cached
     def body(self):
         soup = self.to_soup()
         return soup.find("div", class_="entry_content")
@@ -489,7 +489,8 @@ def save_thumbnail(url, title):
     from io import BytesIO
     try:
         r = requests.get(url)
-    except:
+    except Exception as e:
+        logging.error("Error: %s", e)
         return None
     else:
         img_buffer = BytesIO(r.content)
@@ -818,9 +819,8 @@ class FolkDCChef(JsonTreeChef):
 
 
 def test(channel_tree):
-    base_path = build_path([DATA_DIR, DATA_DIR_SUBJECT, "test"])
-    #c.to_file(base_path)
-    channel_tree["children"].append(c.to_dict())
+    # TODO: implement test with a proper resource node
+    LOGGER.warning("Test mode: no test resource configured, returning empty channel tree.")
     return channel_tree
 
 # CLI
