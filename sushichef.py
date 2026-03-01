@@ -505,7 +505,7 @@ def save_thumbnail(url, title):
 
 
 class YouTubeResourceNode(YouTubeResource):
-    def __init__(self, source_id, name=None, type_name="Youtube", lang="ar", 
+    def __init__(self, source_id, name=None, type_name="Youtube", lang="en",
             embeded=False, section_title=None):
         if embeded is True:
             self.source_id = YouTubeResourceNode.transform_embed(source_id)
