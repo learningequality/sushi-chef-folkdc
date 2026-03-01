@@ -1,51 +1,51 @@
 {
     "en": {"introduction": 
-            {"title": "Introduction", "url": "http://folkdc.eu/resources/overview/"},
+            {"title": "Introduction", "url": "https://folkdc.eu/resources/overview/"},
            "songs": 
-            {"title": "Songs", "url": "http://folkdc.eu/resources/folksongs/"},
+            {"title": "Songs", "url": "https://folkdc.eu/resources/folksongs/"},
            "activities": 
-            {"title": "Activities", "url": "http://folkdc.eu/handbook/"}
+            {"title": "Activities", "url": "https://folkdc.eu/handbook/"}
           },
     "es": {"introduction": 
-            {"title": "Introducción", "url": "http://folkdc.eu/es/recursos/introduccion/"},
+            {"title": "Introducción", "url": "https://folkdc.eu/es/recursos/introduccion/"},
           "songs": 
-            {"title": "Canciones", "url": "http://folkdc.eu/es/recursos/attt-canciones-y-plantillas/"},
+            {"title": "Canciones", "url": "https://folkdc.eu/es/recursos/attt-canciones-y-plantillas/"},
           "activities": 
-            {"title": "Actividades", "url": "http://folkdc.eu/es/attt-actividades/"}
+            {"title": "Actividades", "url": "https://folkdc.eu/es/attt-actividades/"}
           },
     "it": {"introduction": 
-            {"title": "Introduzione", "url": "http://folkdc.eu/it/resources/introduzione/"},
+            {"title": "Introduzione", "url": "https://folkdc.eu/it/resources/introduzione/"},
             "songs": 
-            {"title": "Canzoni", "url": "http://folkdc.eu/it/resources/folksongs-2/"},
+            {"title": "Canzoni", "url": "https://folkdc.eu/it/resources/folksongs-2/"},
            "activities": 
-            {"title": "Attività", "url": "http://folkdc.eu/it/manuale/"} 
+            {"title": "Attività", "url": "https://folkdc.eu/it/manuale/"} 
           },
     "de": {"introduction": 
-            {"title": "Einführung", "url": "http://folkdc.eu/de/materialien/attt-einfuhrung/"},
+            {"title": "Einführung", "url": "https://folkdc.eu/de/materialien/attt-einfuhrung/"},
             "songs": 
-            {"title": "Lieder", "url": "http://folkdc.eu/de/materialien/attt-lieder-und-vorlagen/"},
+            {"title": "Lieder", "url": "https://folkdc.eu/de/materialien/attt-lieder-und-vorlagen/"},
            "activities": 
-            {"title": "Aktivitäten", "url": "http://folkdc.eu/de/attt-aktivitaten/"} 
+            {"title": "Aktivitäten", "url": "https://folkdc.eu/de/attt-aktivitaten/"} 
           },
     "fi": {"introduction": 
-            {"title": "Esittely", "url": "http://folkdc.eu/fi/materiaali/attt-opetuspaketin-esittely/"},
+            {"title": "Esittely", "url": "https://folkdc.eu/fi/materiaali/attt-opetuspaketin-esittely/"},
             "songs": 
-            {"title": "Laulut", "url": "http://folkdc.eu/fi/materiaali/attt-laulut-ja-laulupohjat/"},
+            {"title": "Laulut", "url": "https://folkdc.eu/fi/materiaali/attt-laulut-ja-laulupohjat/"},
            "activities": 
-            {"title": "Tehtävät", "url": "http://folkdc.eu/fi/attt-tehtavat/"} 
+            {"title": "Tehtävät", "url": "https://folkdc.eu/fi/attt-tehtavat/"} 
           },
     "ro": {"introduction": 
-            {"title": "Introducere", "url": "http://folkdc.eu/ro/metodologie/prezentarea-attt/"},
+            {"title": "Introducere", "url": "https://folkdc.eu/ro/metodologie/prezentarea-attt/"},
             "songs": 
-            {"title": "Cântece", "url": "http://folkdc.eu/ro/metodologie/attt-cantece-si-fise/"},
+            {"title": "Cântece", "url": "https://folkdc.eu/ro/metodologie/attt-cantece-si-fise/"},
            "activities": 
-            {"title": "Activităţile", "url": "http://folkdc.eu/ro/activitatile-attt/"} 
+            {"title": "Activităţile", "url": "https://folkdc.eu/ro/activitatile-attt/"} 
           },
     "tr": {"introduction": 
-            {"title": "Introduction", "url": "http://folkdc.eu/tr/kaynaklar/ogretmen-otonom-egitim-seti-giris/"},
+            {"title": "Introduction", "url": "https://folkdc.eu/tr/kaynaklar/ogretmen-otonom-egitim-seti-giris/"},
             "songs": 
-            {"title": "Songs", "url": "http://folkdc.eu/tr/kaynaklar/ooes-sarkilar-ve-sarki-sablonlari/"},
+            {"title": "Songs", "url": "https://folkdc.eu/tr/kaynaklar/ooes-sarkilar-ve-sarki-sablonlari/"},
            "activities": 
-            {"title": "Aktiviteleri", "url": "http://folkdc.eu/tr/ooes-aktiviteler/"} 
+            {"title": "Aktiviteleri", "url": "https://folkdc.eu/tr/ooes-aktiviteler/"} 
           }
 }

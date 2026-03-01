@@ -34,7 +34,7 @@ from utils import file_exists, get_video_resolution_format, remove_links
 from utils import get_name_from_url_no_ext, get_node_from_channel, get_level_map
 from utils import remove_iframes, get_confirm_token, save_response_content
 from utils import link_to_text, remove_scripts
-import youtube_dl
+import yt_dlp as youtube_dl
 
 
 DATA_DIR = "chefdata"
@@ -763,7 +763,7 @@ def download(source_id, loadjs=False, timeout=5):
 class FolkDCChef(JsonTreeChef):
     TREES_DATA_DIR = os.path.join(DATA_DIR, 'trees')
     SCRAPING_STAGE_OUTPUT_TPL = 'ricecooker_{lang}_json_tree.json'
-    BASE_URL = "http://folkdc.eu/"
+    BASE_URL = "https://folkdc.eu/"
 
     def pre_run(self, args, options):
         build_path([FolkDCChef.TREES_DATA_DIR])
